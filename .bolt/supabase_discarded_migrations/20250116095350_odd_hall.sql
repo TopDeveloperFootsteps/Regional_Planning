@@ -1,0 +1,23 @@
+-- Drop all views in the correct order to handle dependencies
+DROP VIEW IF EXISTS hospital_service_distribution CASCADE;
+DROP VIEW IF EXISTS hospital_service_type_analysis CASCADE;
+DROP VIEW IF EXISTS hospital_mapping_verification CASCADE;
+DROP VIEW IF EXISTS hospital_null_mappings CASCADE;
+DROP VIEW IF EXISTS hospital_mapping_by_service CASCADE;
+DROP VIEW IF EXISTS hospital_mapping_status CASCADE;
+DROP VIEW IF EXISTS extended_mapping_by_service CASCADE;
+DROP VIEW IF EXISTS extended_mapping_status CASCADE;
+DROP VIEW IF EXISTS specialty_mapping_by_service CASCADE;
+DROP VIEW IF EXISTS specialty_mapping_status CASCADE;
+DROP VIEW IF EXISTS health_station_mapping_categories CASCADE;
+DROP VIEW IF EXISTS health_station_mapping_status CASCADE;
+DROP VIEW IF EXISTS ambulatory_mapping_categories CASCADE;
+DROP VIEW IF EXISTS ambulatory_mapping_status CASCADE;
+DROP VIEW IF EXISTS home_sm_unmapped CASCADE;
+DROP VIEW IF EXISTS home_sm_final_stats CASCADE;
+DROP VIEW IF EXISTS home_sm_mapping_by_system CASCADE;
+DROP VIEW IF EXISTS home_sm_stats CASCADE;
+DROP VIEW IF EXISTS service_mapping_stats CASCADE;
+DROP VIEW IF EXISTS unmapped_icd_codes CASCADE;
+DROP VIEW IF EXISTS mapping_status CASCADE;
+DROP VIEW IF EXISTS unmapped_codes CASCADE;
