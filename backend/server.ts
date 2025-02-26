@@ -10,6 +10,7 @@ import useEncounter from './api/useEncounter'; // Removed the '.ts' extension
 import assets from './api/assets'; // Removed the '.ts' extension
 import population from './api/population';
 import mapping from './api/Mapping';
+import tablelist from './api/tablelist';
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/useEncounter', useEncounter);
 app.use('/api/assets', assets );
 app.use('/api/population', population);
 app.use('/api/mapping', mapping);
+app.use('/api/tablelist', tablelist);
 
 
 // Test database connection

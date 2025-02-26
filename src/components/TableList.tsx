@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { api } from "../services/api";
 import { Database, Loader2 } from "lucide-react";
 
 interface TableInfo {
@@ -18,38 +18,8 @@ export function TableList() {
         setLoading(true);
         setError(null);
 
-        // List of current tables with their proper names
-        const knownTables = [
-          "home_services_mapping",
-          "ambulatory_service_center_services_mapping",
-          "extended_care_facility_services_mapping",
-          "health_station_services_mapping",
-          "specialty_care_center_services_mapping",
-          "hospital_services_mapping",
-          "care_settings_encounters",
-        ];
-
-        const tableData = await Promise.all(
-          knownTables.map(async (tableName) => {
-            try {
-              const { count, error } = await supabase
-                .from(tableName)
-                .select("*", { count: "exact", head: true });
-
-              if (error) {
-                console.warn(`Error fetching count for ${tableName}:`, error);
-                return { name: tableName, count: 0 };
-              }
-
-              return { name: tableName, count: count || 0 };
-            } catch (err) {
-              console.warn(`Error processing table ${tableName}:`, err);
-              return { name: tableName, count: 0 };
-            }
-          })
-        );
-
-        setTables(tableData.filter((table) => table.count > 0));
+        const response = await api.get("/tablelist"); // Update to your backend API
+        setTables(response);
       } catch (err) {
         console.error("Error fetching tables:", err);
         setError("Failed to fetch table information");
