@@ -5,6 +5,7 @@ import logo from  './api/logo';
 import regionsRouter from './api/regions';
 import subRegionsRouter from './api/subRegions';
 import mapSettingsRouter from './api/mapsettings'; // Changed 'mapSettings' to 'mapsettings' to match the casing
+import useSettings from './api/useSettings'; 
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,7 @@ app.use('/api/getImageUrl', logo);
 app.use('/api/regions', regionsRouter);
 app.use('/api/subRegions', subRegionsRouter);
 app.use('/api/mapSettings', mapSettingsRouter);
+app.use('/api/useSettings', useSettings);
 
 
 // Test database connection

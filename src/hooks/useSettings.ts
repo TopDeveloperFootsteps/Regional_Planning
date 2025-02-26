@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../services/api'; // Ensure you have the api service set up
 
 interface MapSettings {
   id: string;
@@ -26,22 +26,11 @@ export function useSettings() {
       setError(null);
 
       // Fetch region settings
-      const { data: regionData, error: regionError } = await supabase
-        .from('region_settings')
-        .select('*')
-        .single();
-
-      if (regionError) throw regionError;
+      const regionData = await api.get('/useSettings/regionSettings'); // Adjust endpoint as needed
+      setRegionSettings(regionData);
 
       // Fetch sub-region settings
-      const { data: subRegionData, error: subRegionError } = await supabase
-        .from('sub_region_settings')
-        .select('*')
-        .single();
-
-      if (subRegionError) throw subRegionError;
-
-      setRegionSettings(regionData);
+      const subRegionData = await api.get('/useSettings/subRegionSettings'); // Adjust endpoint as needed
       setSubRegionSettings(subRegionData);
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -54,13 +43,10 @@ export function useSettings() {
   const updateRegionSettings = async (settings: Partial<MapSettings>) => {
     try {
       setError(null);
-      const { error } = await supabase
-        .from('region_settings')
-        .update(settings)
-        .eq('id', regionSettings?.id);
-
-      if (error) throw error;
-      await fetchSettings();
+      if (regionSettings) {
+        const updatedSettings = await api.put(`/useSettings/regionSettings/${regionSettings.id}`, settings);
+        setRegionSettings(updatedSettings);
+      }
     } catch (err) {
       console.error('Error updating region settings:', err);
       setError('Failed to update region settings');
@@ -71,13 +57,10 @@ export function useSettings() {
   const updateSubRegionSettings = async (settings: Partial<MapSettings>) => {
     try {
       setError(null);
-      const { error } = await supabase
-        .from('sub_region_settings')
-        .update(settings)
-        .eq('id', subRegionSettings?.id);
-
-      if (error) throw error;
-      await fetchSettings();
+      if (subRegionSettings) {
+        const updatedSettings = await api.put(`/useSettings/subRegionSettings/${subRegionSettings.id}`, settings); // Adjust endpoint as needed
+        setSubRegionSettings(updatedSettings);
+      }
     } catch (err) {
       console.error('Error updating sub-region settings:', err);
       setError('Failed to update sub-region settings');
