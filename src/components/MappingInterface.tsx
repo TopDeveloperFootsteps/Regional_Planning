@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { api } from "../services/api";
 import {
   Search,
   Upload,
@@ -79,34 +79,16 @@ export function MappingInterface() {
     batch: CsvRow[],
     setting: { id: string; name: string; table: string }
   ) => {
-    const promises = batch.map(async (row) => {
-      try {
-        const icdPrefix = getIcdPrefix(row["ICD Code"]);
-        const { data, error: queryError } = await supabase
-          .from(setting.table)
-          .select("service, confidence, mapping_logic")
-          .ilike("icd_code", `${icdPrefix}%`)
-          .eq("systems_of_care", row["Systems of Care"])
-          .limit(1);
-
-        if (queryError) {
-          console.error("Error querying mapping:", queryError);
-          return row;
-        }
-
-        if (data && data[0]) {
-          row.Service = data[0].service;
-          row.Confidence = data[0].confidence;
-          row["Mapping Logic"] = data[0].mapping_logic;
-        }
-        return row;
-      } catch (err) {
-        console.error("Error processing row:", err);
-        return row;
-      }
-    });
-
-    return await Promise.all(promises);
+    try {
+      const response = await api.post("/mapping/batch", {
+        batch,
+        careSettingTable: setting.table,
+      });
+      return response;
+    } catch (error) {
+      console.error("Error processing batch:", error);
+      return batch; // Return the original batch in case of error
+    }
   };
 
   const handleFileUpload = async (
@@ -198,25 +180,13 @@ export function MappingInterface() {
         throw new Error("Invalid care setting");
       }
 
-      const icdPrefix = getIcdPrefix(icdCode);
-      let query = supabase
-        .from(setting.table)
-        .select("service, confidence, mapping_logic")
-        .ilike("icd_code", `${icdPrefix}%`);
+      const response = await api.post("/mapping", {
+        icdCode,
+        systemOfCare: selectedSystem,
+        careSettingTable: setting.table,
+      });
 
-      if (selectedSystem) {
-        query = query.eq("systems_of_care", selectedSystem);
-      }
-
-      const { data, error: queryError } = await query.limit(1);
-
-      if (queryError) throw queryError;
-
-      if (data && data.length > 0) {
-        setMappingResult(data[0]);
-      } else {
-        setError("No mapping found for the given ICD code and settings");
-      }
+      setMappingResult(response);
     } catch (err) {
       console.error("Error searching for mapping:", err);
       setError("An error occurred while searching. Please try again.");
