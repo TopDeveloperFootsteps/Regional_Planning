@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { Region, SubRegion, MapSettings } from '../types/regions';
+import { api } from '../services/api';
 
 export function useRegions() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -25,20 +25,10 @@ export function useRegions() {
 
   const fetchRegions = async () => {
     try {
-      const { data: regionsData, error: regionsError } = await supabase
-        .from('regions')
-        .select('*')
-        .order('name');
-
-      if (regionsError) throw regionsError;
+      const regionsData = await api.get('/regions');
       setRegions(regionsData || []);
 
-      const { data: subRegionsData, error: subRegionsError } = await supabase
-        .from('sub_regions')
-        .select('*')
-        .order('name');
-
-      if (subRegionsError) throw subRegionsError;
+      const subRegionsData = await api.get('/subRegions');
       setSubRegions(subRegionsData || []);
     } catch (error) {
       console.error('Error fetching regions:', error);
@@ -47,13 +37,7 @@ export function useRegions() {
 
   const fetchMapSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('map_settings')
-        .select('*')
-        .limit(1)
-        .single();
-
-      if (error) throw error;
+      const data = await api.get('/mapSettings');
       if (data) {
         setMapSettings(data);
       }
@@ -64,18 +48,8 @@ export function useRegions() {
 
   const saveMapSettings = async (settings: MapSettings) => {
     try {
-      const { error } = await supabase
-        .from('map_settings')
-        .update({
-          show_circles: settings.show_circles,
-          circle_transparency: settings.circle_transparency,
-          circle_border: settings.circle_border,
-          circle_radius_km: settings.circle_radius_km
-        })
-        .eq('id', settings.id);
-
-      if (error) throw error;
-      setMapSettings(settings);
+      const updatedSettings = await api.put(`/mapSettings/${settings.id}`, settings);
+      setMapSettings(updatedSettings);
     } catch (error) {
       console.error('Error saving map settings:', error);
       throw error;
@@ -86,33 +60,11 @@ export function useRegions() {
     try {
       if (regionData.id) {
         // Update existing region
-        const { error } = await supabase
-          .from('regions')
-          .update({
-            name: regionData.name,
-            latitude: regionData.latitude,
-            longitude: regionData.longitude,
-            status: regionData.status,
-            is_neom: regionData.is_neom
-          })
-          .eq('id', regionData.id);
-
-        if (error) throw error;
+        await api.put(`/regions/${regionData.id}`, regionData);
       } else {
         // Create new region
-        const { error } = await supabase
-          .from('regions')
-          .insert([{
-            name: regionData.name,
-            latitude: regionData.latitude,
-            longitude: regionData.longitude,
-            status: 'active',
-            is_neom: regionData.is_neom
-          }]);
-
-        if (error) throw error;
+        await api.post('/regions', regionData);
       }
-
       await fetchRegions();
     } catch (error) {
       console.error('Error saving region:', error);
