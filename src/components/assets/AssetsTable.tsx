@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Edit2, ToggleLeft, ToggleRight } from "lucide-react";
+import { api } from "../../services/api";
 
 interface Asset {
   id: string;
@@ -39,22 +39,16 @@ export function AssetsTable({ onEdit }: AssetsTableProps) {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
+      const data = await api.get("/assets/assetsTable"); // Update to your backend API
       // Filter assets based on status
-      const filteredAssets = data.filter(asset => 
-        showInactive ? true : asset.status !== 'Closed'
+      const filteredAssets = data.filter((asset) =>
+        showInactive ? true : asset.status !== "Closed"
       );
 
       setAssets(filteredAssets);
     } catch (err) {
-      console.error('Error fetching assets:', err);
-      setError('Failed to load assets');
+      console.error("Error fetching assets:", err);
+      setError("Failed to load assets");
     } finally {
       setLoading(false);
     }
@@ -69,11 +63,7 @@ export function AssetsTable({ onEdit }: AssetsTableProps) {
   }
 
   if (error) {
-    return (
-      <div className="text-red-600 p-4 text-center">
-        {error}
-      </div>
-    );
+    return <div className="text-red-600 p-4 text-center">{error}</div>;
   }
 
   return (
@@ -99,31 +89,64 @@ export function AssetsTable({ onEdit }: AssetsTableProps) {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archetype</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Asset ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Owner
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Archetype
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {assets.map((asset) => (
-              <tr key={asset.id} className={asset.status === 'Closed' ? 'bg-gray-50' : ''}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{asset.asset_id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{asset.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{asset.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{asset.owner}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{asset.archetype}</td>
+              <tr
+                key={asset.id}
+                className={asset.status === "Closed" ? "bg-gray-50" : ""}
+              >
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {asset.asset_id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {asset.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {asset.type}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {asset.owner}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {asset.archetype}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    asset.status === 'Operational' ? 'bg-green-100 text-green-800' :
-                    asset.status === 'Partially Operational' ? 'bg-yellow-100 text-yellow-800' :
-                    asset.status === 'Closed' ? 'bg-red-100 text-red-800' :
-                    asset.status === 'Not Started' ? 'bg-gray-100 text-gray-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      asset.status === "Operational"
+                        ? "bg-green-100 text-green-800"
+                        : asset.status === "Partially Operational"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : asset.status === "Closed"
+                        ? "bg-red-100 text-red-800"
+                        : asset.status === "Not Started"
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
                     {asset.status}
                   </span>
                 </td>
@@ -142,9 +165,7 @@ export function AssetsTable({ onEdit }: AssetsTableProps) {
       </div>
 
       {assets.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          No assets found
-        </div>
+        <div className="text-center py-8 text-gray-500">No assets found</div>
       )}
     </div>
   );

@@ -1,15 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useRegions } from '../../hooks/useRegions';
+import React, { useState, useEffect } from "react";
+import { useRegions } from "../../hooks/useRegions";
+import { api } from "../../services/api";
 
 interface Asset {
   id: string;
   region_id: string;
   asset_id: string;
   name: string;
-  type: 'Permanent' | 'Temporary' | 'PPP' | 'MoH';
-  owner: 'Neom' | 'MoD' | 'Construction Camp' | 'AlBassam' | 'Nessma' | 'Tamasuk' | 'Alfanar' | 'Almutlaq' | 'MoH';
-  archetype: 'Family Health Center' | 'Resort' | 'Spoke' | 'Field Hospital' | 'N/A' | 'Advance Health Center' | 'Hub' | 'First Aid Point' | 'Clinic' | 'Hospital';
+  type: "Permanent" | "Temporary" | "PPP" | "MoH";
+  owner:
+    | "Neom"
+    | "MoD"
+    | "Construction Camp"
+    | "AlBassam"
+    | "Nessma"
+    | "Tamasuk"
+    | "Alfanar"
+    | "Almutlaq"
+    | "MoH";
+  archetype:
+    | "Family Health Center"
+    | "Resort"
+    | "Spoke"
+    | "Field Hospital"
+    | "N/A"
+    | "Advance Health Center"
+    | "Hub"
+    | "First Aid Point"
+    | "Clinic"
+    | "Hospital";
   population_types: string[];
   start_date: string;
   end_date: string | null;
@@ -24,58 +43,53 @@ interface AssetsFormProps {
 }
 
 const POPULATION_TYPES = [
-  'Residents',
-  'Staff',
-  'Visitors/Tourists',
-  'Construction Workers'
+  "Residents",
+  "Staff",
+  "Visitors/Tourists",
+  "Construction Workers",
 ];
 
 const ARCHETYPES = [
-  'N/A',
-  'Family Health Center',
-  'Resort',
-  'Spoke',
-  'Field Hospital',
-  'Advance Health Center',
-  'Hub',
-  'First Aid Point',
-  'Clinic',
-  'Hospital'
+  "N/A",
+  "Family Health Center",
+  "Resort",
+  "Spoke",
+  "Field Hospital",
+  "Advance Health Center",
+  "Hub",
+  "First Aid Point",
+  "Clinic",
+  "Hospital",
 ] as const;
 
-const ASSET_TYPES = [
-  'Permanent',
-  'Temporary',
-  'PPP',
-  'MoH'
-] as const;
+const ASSET_TYPES = ["Permanent", "Temporary", "PPP", "MoH"] as const;
 
 const OWNERS = [
-  'Neom',
-  'MoD',
-  'Construction Camp',
-  'AlBassam',
-  'Nessma',
-  'Tamasuk',
-  'Alfanar',
-  'Almutlaq',
-  'MoH'
+  "Neom",
+  "MoD",
+  "Construction Camp",
+  "AlBassam",
+  "Nessma",
+  "Tamasuk",
+  "Alfanar",
+  "Almutlaq",
+  "MoH",
 ] as const;
 
 // Sorted in logical project lifecycle order
 const STATUSES = [
-  'Not Started',    // Initial state
-  'Design',         // Design phase
-  'Planning',       // Planning phase
-  'Partially Operational', // Transition state
-  'Operational',    // Fully operational
-  'Closed'          // End of lifecycle
+  "Not Started", // Initial state
+  "Design", // Design phase
+  "Planning", // Planning phase
+  "Partially Operational", // Transition state
+  "Operational", // Fully operational
+  "Closed", // End of lifecycle
 ] as const;
 
 export function AssetsForm({ initialAsset }: AssetsFormProps) {
   const { regions } = useRegions();
   const [formData, setFormData] = useState<Partial<Asset>>({
-    population_types: []
+    population_types: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isActive, setIsActive] = useState(true);
@@ -84,7 +98,7 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
   useEffect(() => {
     if (initialAsset) {
       setFormData(initialAsset);
-      setIsActive(initialAsset.status !== 'Closed');
+      setIsActive(initialAsset.status !== "Closed");
     } else {
       setFormData({ population_types: [] });
       setIsActive(true);
@@ -97,25 +111,25 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
   };
 
   const handleRegionChange = (regionId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       region_id: regionId,
-      asset_id: generateAssetId(regionId)
+      asset_id: generateAssetId(regionId),
     }));
   };
 
   const handlePopulationTypeChange = (type: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const types = prev.population_types || [];
       if (types.includes(type)) {
         return {
           ...prev,
-          population_types: types.filter(t => t !== type)
+          population_types: types.filter((t) => t !== type),
         };
       } else {
         return {
           ...prev,
-          population_types: [...types, type]
+          population_types: [...types, type],
         };
       }
     });
@@ -124,17 +138,18 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.region_id) newErrors.region_id = 'Region is required';
-    if (!formData.name) newErrors.name = 'Asset name is required';
-    if (!formData.type) newErrors.type = 'Type is required';
-    if (!formData.owner) newErrors.owner = 'Owner is required';
-    if (!formData.archetype) newErrors.archetype = 'Archetype is required';
-    if (!formData.population_types?.length) newErrors.population_types = 'At least one population type is required';
-    if (!formData.start_date) newErrors.start_date = 'Start date is required';
-    if (!formData.latitude) newErrors.latitude = 'Latitude is required';
-    if (!formData.longitude) newErrors.longitude = 'Longitude is required';
-    if (!formData.gfa) newErrors.gfa = 'GFA is required';
-    if (!formData.status) newErrors.status = 'Status is required';
+    if (!formData.region_id) newErrors.region_id = "Region is required";
+    if (!formData.name) newErrors.name = "Asset name is required";
+    if (!formData.type) newErrors.type = "Type is required";
+    if (!formData.owner) newErrors.owner = "Owner is required";
+    if (!formData.archetype) newErrors.archetype = "Archetype is required";
+    if (!formData.population_types?.length)
+      newErrors.population_types = "At least one population type is required";
+    if (!formData.start_date) newErrors.start_date = "Start date is required";
+    if (!formData.latitude) newErrors.latitude = "Latitude is required";
+    if (!formData.longitude) newErrors.longitude = "Longitude is required";
+    if (!formData.gfa) newErrors.gfa = "GFA is required";
+    if (!formData.status) newErrors.status = "Status is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -142,43 +157,26 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
       setIsSaving(true);
-      
+
       // Update status based on isActive
       const dataToSave = {
         ...formData,
-        status: isActive ? formData.status : 'Closed'
+        status: isActive ? formData.status : "Closed",
       };
 
-      if (initialAsset?.id) {
-        // Update existing asset
-        const { error } = await supabase
-          .from('assets')
-          .update(dataToSave)
-          .eq('id', initialAsset.id);
-
-        if (error) throw error;
-      } else {
-        // Create new asset
-        const { error } = await supabase
-          .from('assets')
-          .insert([dataToSave]);
-
-        if (error) throw error;
-      }
-
+      const response = await api.post("/assets/assetsForm", dataToSave);
       // Reset form
       setFormData({ population_types: [] });
       setIsActive(true);
       setErrors({});
-      
     } catch (error) {
-      console.error('Error saving asset:', error);
-      setErrors({ submit: 'Failed to save asset' });
+      console.error("Error saving asset:", error);
+      setErrors({ submit: "Failed to save asset" });
     } finally {
       setIsSaving(false);
     }
@@ -188,23 +186,26 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Region Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Region</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Region
+        </label>
         <select
-          value={formData.region_id || ''}
+          value={formData.region_id || ""}
           onChange={(e) => handleRegionChange(e.target.value)}
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.region_id 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.region_id
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         >
           <option value="">Select a region</option>
           {regions
-            .filter(r => r.status === 'active')
-            .map(region => (
-              <option key={region.id} value={region.id}>{region.name}</option>
-            ))
-          }
+            .filter((r) => r.status === "active")
+            .map((region) => (
+              <option key={region.id} value={region.id}>
+                {region.name}
+              </option>
+            ))}
         </select>
         {errors.region_id && (
           <p className="mt-1 text-sm text-red-600">{errors.region_id}</p>
@@ -213,10 +214,12 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Asset ID (Read-only) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Asset ID</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Asset ID
+        </label>
         <input
           type="text"
-          value={formData.asset_id || ''}
+          value={formData.asset_id || ""}
           readOnly
           className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm"
         />
@@ -224,15 +227,19 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Asset Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Asset Name</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Asset Name
+        </label>
         <input
           type="text"
-          value={formData.name || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          value={formData.name || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.name 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.name
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         />
         {errors.name && (
@@ -242,19 +249,28 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Type of Asset */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Type of Asset</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Type of Asset
+        </label>
         <select
-          value={formData.type || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as Asset['type'] }))}
+          value={formData.type || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              type: e.target.value as Asset["type"],
+            }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.type 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.type
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         >
           <option value="">Select type</option>
-          {ASSET_TYPES.map(type => (
-            <option key={type} value={type}>{type}</option>
+          {ASSET_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
           ))}
         </select>
         {errors.type && (
@@ -266,17 +282,24 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
       <div>
         <label className="block text-sm font-medium text-gray-700">Owner</label>
         <select
-          value={formData.owner || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, owner: e.target.value as Asset['owner'] }))}
+          value={formData.owner || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              owner: e.target.value as Asset["owner"],
+            }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.owner 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.owner
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         >
           <option value="">Select owner</option>
-          {OWNERS.map(owner => (
-            <option key={owner} value={owner}>{owner}</option>
+          {OWNERS.map((owner) => (
+            <option key={owner} value={owner}>
+              {owner}
+            </option>
           ))}
         </select>
         {errors.owner && (
@@ -286,19 +309,28 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Asset Archetype */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Asset Archetype (Care Level)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Asset Archetype (Care Level)
+        </label>
         <select
-          value={formData.archetype || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, archetype: e.target.value as Asset['archetype'] }))}
+          value={formData.archetype || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              archetype: e.target.value as Asset["archetype"],
+            }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.archetype 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.archetype
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         >
           <option value="">Select archetype</option>
-          {ARCHETYPES.map(archetype => (
-            <option key={archetype} value={archetype}>{archetype}</option>
+          {ARCHETYPES.map((archetype) => (
+            <option key={archetype} value={archetype}>
+              {archetype}
+            </option>
           ))}
         </select>
         {errors.archetype && (
@@ -308,9 +340,11 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Population Types */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Population Type</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Population Type
+        </label>
         <div className="space-y-2">
-          {POPULATION_TYPES.map(type => (
+          {POPULATION_TYPES.map((type) => (
             <label key={type} className="flex items-center">
               <input
                 type="checkbox"
@@ -330,16 +364,20 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
       {/* Dates */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Start Date</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Start Date
+          </label>
           <input
             type="date"
             min="2017-01-01"
-            value={formData.start_date || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+            value={formData.start_date || ""}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, start_date: e.target.value }))
+            }
             className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-              errors.start_date 
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+              errors.start_date
+                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
             }`}
           />
           {errors.start_date && (
@@ -347,12 +385,16 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">End Date</label>
+          <label className="block text-sm font-medium text-gray-700">
+            End Date
+          </label>
           <input
             type="date"
-            min={formData.start_date || '2017-01-01'}
-            value={formData.end_date || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+            min={formData.start_date || "2017-01-01"}
+            value={formData.end_date || ""}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, end_date: e.target.value }))
+            }
             className="mt-1 block w-full rounded-md border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm sm:text-sm"
           />
         </div>
@@ -361,16 +403,23 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
       {/* Coordinates */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Latitude</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Latitude
+          </label>
           <input
             type="number"
             step="any"
-            value={formData.latitude || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, latitude: parseFloat(e.target.value) }))}
+            value={formData.latitude || ""}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                latitude: parseFloat(e.target.value),
+              }))
+            }
             className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-              errors.latitude 
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+              errors.latitude
+                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
             }`}
           />
           {errors.latitude && (
@@ -378,16 +427,23 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Longitude</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Longitude
+          </label>
           <input
             type="number"
             step="any"
-            value={formData.longitude || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, longitude: parseFloat(e.target.value) }))}
+            value={formData.longitude || ""}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                longitude: parseFloat(e.target.value),
+              }))
+            }
             className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-              errors.longitude 
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+              errors.longitude
+                ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
             }`}
           />
           {errors.longitude && (
@@ -398,17 +454,24 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* GFA */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">GFA (sqm)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          GFA (sqm)
+        </label>
         <input
           type="number"
           min="0"
           step="0.01"
-          value={formData.gfa || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, gfa: parseFloat(e.target.value) }))}
+          value={formData.gfa || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              gfa: parseFloat(e.target.value),
+            }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.gfa 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.gfa
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
         />
         {errors.gfa && (
@@ -418,20 +481,26 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
 
       {/* Status */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Status</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Status
+        </label>
         <select
-          value={formData.status || ''}
-          onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+          value={formData.status || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, status: e.target.value }))
+          }
           className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-            errors.status 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500'
+            errors.status
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
           }`}
           disabled={!isActive}
         >
           <option value="">Select status</option>
-          {STATUSES.map(status => (
-            <option key={status} value={status}>{status}</option>
+          {STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
           ))}
         </select>
         {errors.status && (
@@ -460,7 +529,11 @@ export function AssetsForm({ initialAsset }: AssetsFormProps) {
           disabled={isSaving}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
         >
-          {isSaving ? 'Saving...' : (initialAsset ? 'Update Asset' : 'Save Asset')}
+          {isSaving
+            ? "Saving..."
+            : initialAsset
+            ? "Update Asset"
+            : "Save Asset"}
         </button>
       </div>
 

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Database, Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { Database, Loader2 } from "lucide-react";
 
 interface TableInfo {
   name: string;
@@ -20,13 +20,13 @@ export function TableList() {
 
         // List of current tables with their proper names
         const knownTables = [
-          'home_services_mapping',
-          'ambulatory_service_center_services_mapping',
-          'extended_care_facility_services_mapping',
-          'health_station_services_mapping',
-          'specialty_care_center_services_mapping',
-          'hospital_services_mapping',
-          'care_settings_encounters'
+          "home_services_mapping",
+          "ambulatory_service_center_services_mapping",
+          "extended_care_facility_services_mapping",
+          "health_station_services_mapping",
+          "specialty_care_center_services_mapping",
+          "hospital_services_mapping",
+          "care_settings_encounters",
         ];
 
         const tableData = await Promise.all(
@@ -34,7 +34,7 @@ export function TableList() {
             try {
               const { count, error } = await supabase
                 .from(tableName)
-                .select('*', { count: 'exact', head: true });
+                .select("*", { count: "exact", head: true });
 
               if (error) {
                 console.warn(`Error fetching count for ${tableName}:`, error);
@@ -49,10 +49,10 @@ export function TableList() {
           })
         );
 
-        setTables(tableData.filter(table => table.count > 0));
+        setTables(tableData.filter((table) => table.count > 0));
       } catch (err) {
-        console.error('Error fetching tables:', err);
-        setError('Failed to fetch table information');
+        console.error("Error fetching tables:", err);
+        setError("Failed to fetch table information");
       } finally {
         setLoading(false);
       }
@@ -63,9 +63,9 @@ export function TableList() {
 
   const formatTableName = (name: string): string => {
     return name
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   if (loading) {
@@ -93,18 +93,22 @@ export function TableList() {
         <Database className="h-5 w-5 text-emerald-600" />
         <h2 className="text-lg font-semibold text-gray-900">Database Tables</h2>
       </div>
-      
+
       {tables.length === 0 ? (
         <p className="text-gray-500 text-sm">No tables available</p>
       ) : (
         <ul className="space-y-2">
-          {tables.map(table => (
-            <li 
-              key={table.name} 
+          {tables.map((table) => (
+            <li
+              key={table.name}
               className="flex items-center justify-between text-sm p-2 hover:bg-gray-50 rounded-md transition-colors"
             >
-              <span className="text-gray-600">{formatTableName(table.name)}</span>
-              <span className="text-gray-400 text-xs">{table.count} records</span>
+              <span className="text-gray-600">
+                {formatTableName(table.name)}
+              </span>
+              <span className="text-gray-400 text-xs">
+                {table.count} records
+              </span>
             </li>
           ))}
         </ul>

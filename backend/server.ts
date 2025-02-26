@@ -6,7 +6,9 @@ import regionsRouter from './api/regions';
 import subRegionsRouter from './api/subRegions';
 import mapSettingsRouter from './api/mapsettings'; // Changed 'mapSettings' to 'mapsettings' to match the casing
 import useSettings from './api/useSettings'; 
-import useEncounter from './api/useEncounter.ts';
+import useEncounter from './api/useEncounter'; // Removed the '.ts' extension
+import assets from './api/assets'; // Removed the '.ts' extension
+
 
 const app = express();
 app.use(cors());
@@ -17,7 +19,8 @@ app.use('/api/regions', regionsRouter);
 app.use('/api/subRegions', subRegionsRouter);
 app.use('/api/mapSettings', mapSettingsRouter);
 app.use('/api/useSettings', useSettings);
-app.use('./api/useEncounter', useEncounter)
+app.use('./api/useEncounter', useEncounter);
+app.use('/api/assets', assets );
 
 
 // Test database connection
