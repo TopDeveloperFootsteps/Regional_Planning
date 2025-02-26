@@ -8,6 +8,7 @@ import mapSettingsRouter from './api/mapsettings'; // Changed 'mapSettings' to '
 import useSettings from './api/useSettings'; 
 import useEncounter from './api/useEncounter'; // Removed the '.ts' extension
 import assets from './api/assets'; // Removed the '.ts' extension
+import population from './api/population';
 
 
 const app = express();
@@ -19,8 +20,9 @@ app.use('/api/regions', regionsRouter);
 app.use('/api/subRegions', subRegionsRouter);
 app.use('/api/mapSettings', mapSettingsRouter);
 app.use('/api/useSettings', useSettings);
-app.use('./api/useEncounter', useEncounter);
+app.use('/api/useEncounter', useEncounter);
 app.use('/api/assets', assets );
+app.use('/api/population', population);
 
 
 // Test database connection

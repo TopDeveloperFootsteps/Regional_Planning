@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-// import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { Loader2, Map } from "lucide-react";
-import { api } from "../services/api";
 
 export function Header() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -15,8 +14,9 @@ export function Header() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await api.get("/getImageUrl?imageName=NEOM_logo.svg");
-        const { publicUrl } = await response.json();
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("image").getPublicUrl("NEOM_logo.svg");
 
         if (publicUrl) {
           setLogoUrl(publicUrl);

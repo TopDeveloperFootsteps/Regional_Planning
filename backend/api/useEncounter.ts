@@ -4,7 +4,7 @@ import { Router } from  'express';
 
 const router = Router();
 // Get region settings
-router.get('/useEncounter/encountersStatistics', async (req, res) => {
+router.get('/encountersStatistics', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM encounters_statistics'); // Adjust the query as needed
       res.json(result.rows);
@@ -15,7 +15,7 @@ router.get('/useEncounter/encountersStatistics', async (req, res) => {
   });
   
   // Get system of care analysis
-  router.get('/useEncounter/systemOfCareAnalysis', async (req, res) => {
+  router.get('/systemOfCareAnalysis', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM system_of_care_analysis'); // Adjust the query as needed
       res.json(result.rows);
@@ -26,7 +26,7 @@ router.get('/useEncounter/encountersStatistics', async (req, res) => {
   });
   
   // Get care setting optimization data
-  router.get('/useEncounter/careSettingOptimizationData', async (req, res) => {
+  router.get('/careSettingOptimizationData', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM care_setting_optimization_data'); // Adjust the query as needed
       res.json(result.rows);
@@ -37,7 +37,7 @@ router.get('/useEncounter/encountersStatistics', async (req, res) => {
   });
   
   // Get ICD code analysis
-  router.get('/useEncounter/icdCodeAnalysis', async (req, res) => {
+  router.get('/icdCodeAnalysis', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM icd_code_analysis ORDER BY total_encounters DESC LIMIT 5'); // Adjust the query as needed
       res.json(result.rows);

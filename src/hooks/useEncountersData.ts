@@ -29,8 +29,8 @@ export function useEncountersData() {
       if (topIcdResult.error) throw topIcdResult.error;
 
       // Transform the data to include system distribution and top ICD codes
-      const transformedStats = statsResult.data.map(stat => {
-        const systemDistributions = systemResult.data.reduce((acc, system) => {
+      const transformedStats = statsResult.map(stat => {
+        const systemDistributions = systemResult.reduce((acc, system) => {
           const percentage = system.care_setting_percentages?.[stat.care_setting];
           if (percentage !== undefined) {
             acc[system.system_of_care] = percentage;
@@ -38,10 +38,11 @@ export function useEncountersData() {
           return acc;
         }, {} as Record<string, number>);
 
+
         return {
           ...stat,
           system_distribution: systemDistributions,
-          top_icd_codes: topIcdResult.data.map(icd => ({
+          top_icd_codes: topIcdResult.map(icd => ({
             icd_family_code: icd.icd_family_code,
             description: icd.description || 'No description available',
             encounters: icd.total_encounters,
@@ -51,8 +52,8 @@ export function useEncountersData() {
       });
 
       setEncounterStats(transformedStats);
-      setSystemDistribution(systemResult.data);
-      setOptimizationData(optimizationResult.data);
+      setSystemDistribution(systemResult);
+      setOptimizationData(optimizationResult);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError(

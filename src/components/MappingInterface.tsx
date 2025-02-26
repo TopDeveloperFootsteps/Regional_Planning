@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Search, Upload, Download, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { supabase } from "../lib/supabase";
+import {
+  Search,
+  Upload,
+  Download,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 interface MappingResult {
   service: string;
@@ -9,75 +16,92 @@ interface MappingResult {
 }
 
 interface CsvRow {
-  'Care Setting': string;
-  'Systems of Care': string;
-  'ICD Code': string;
+  "Care Setting": string;
+  "Systems of Care": string;
+  "ICD Code": string;
   Service?: string;
   Confidence?: string;
-  'Mapping Logic'?: string;
+  "Mapping Logic"?: string;
 }
 
 const careSettings = [
-  { id: '1', name: 'HEALTH STATION', table: 'health_station_services_mapping' },
-  { id: '2', name: 'HOME', table: 'home_services_mapping' },
-  { id: '3', name: 'AMBULATORY SERVICE CENTER', table: 'ambulatory_service_center_services_mapping' },
-  { id: '4', name: 'SPECIALTY CARE CENTER', table: 'specialty_care_center_services_mapping' },
-  { id: '5', name: 'EXTENDED CARE FACILITY', table: 'extended_care_facility_services_mapping' },
-  { id: '6', name: 'HOSPITAL', table: 'hospital_services_mapping' }
+  { id: "1", name: "HEALTH STATION", table: "health_station_services_mapping" },
+  { id: "2", name: "HOME", table: "home_services_mapping" },
+  {
+    id: "3",
+    name: "AMBULATORY SERVICE CENTER",
+    table: "ambulatory_service_center_services_mapping",
+  },
+  {
+    id: "4",
+    name: "SPECIALTY CARE CENTER",
+    table: "specialty_care_center_services_mapping",
+  },
+  {
+    id: "5",
+    name: "EXTENDED CARE FACILITY",
+    table: "extended_care_facility_services_mapping",
+  },
+  { id: "6", name: "HOSPITAL", table: "hospital_services_mapping" },
 ];
 
 const systemsOfCare = [
-  'Unplanned care',
-  'Planned care',
-  'Children and young people',
-  'Complex, multi-morbid',
-  'Chronic conditions',
-  'Palliative care and support',
-  'Wellness and longevity'
+  "Unplanned care",
+  "Planned care",
+  "Children and young people",
+  "Complex, multi-morbid",
+  "Chronic conditions",
+  "Palliative care and support",
+  "Wellness and longevity",
 ];
 
 export function MappingInterface() {
-  const [selectedSetting, setSelectedSetting] = useState<string>('');
-  const [selectedSystem, setSelectedSystem] = useState<string>('');
-  const [icdCode, setIcdCode] = useState<string>('');
+  const [selectedSetting, setSelectedSetting] = useState<string>("");
+  const [selectedSystem, setSelectedSystem] = useState<string>("");
+  const [icdCode, setIcdCode] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
-  const [mappingResult, setMappingResult] = useState<MappingResult | null>(null);
-  const [error, setError] = useState<string>('');
+  const [mappingResult, setMappingResult] = useState<MappingResult | null>(
+    null
+  );
+  const [error, setError] = useState<string>("");
   const [csvData, setCsvData] = useState<CsvRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const getIcdPrefix = (icdCode: string): string => {
     // Extract the first part of the ICD code (e.g., "Z23" from "Z23 - ENCOUNTER FOR IMMUNIZATION")
-    const cleanCode = icdCode.replace(/['"]/g, '').trim();
+    const cleanCode = icdCode.replace(/['"]/g, "").trim();
     const codeMatch = cleanCode.match(/^([A-Z]\d+)/i);
     return codeMatch ? codeMatch[1].toUpperCase() : cleanCode;
   };
 
-  const processBatch = async (batch: CsvRow[], setting: { id: string; name: string; table: string }) => {
+  const processBatch = async (
+    batch: CsvRow[],
+    setting: { id: string; name: string; table: string }
+  ) => {
     const promises = batch.map(async (row) => {
       try {
-        const icdPrefix = getIcdPrefix(row['ICD Code']);
+        const icdPrefix = getIcdPrefix(row["ICD Code"]);
         const { data, error: queryError } = await supabase
           .from(setting.table)
-          .select('service, confidence, mapping_logic')
-          .ilike('icd_code', `${icdPrefix}%`)
-          .eq('systems_of_care', row['Systems of Care'])
+          .select("service, confidence, mapping_logic")
+          .ilike("icd_code", `${icdPrefix}%`)
+          .eq("systems_of_care", row["Systems of Care"])
           .limit(1);
 
         if (queryError) {
-          console.error('Error querying mapping:', queryError);
+          console.error("Error querying mapping:", queryError);
           return row;
         }
 
         if (data && data[0]) {
           row.Service = data[0].service;
           row.Confidence = data[0].confidence;
-          row['Mapping Logic'] = data[0].mapping_logic;
+          row["Mapping Logic"] = data[0].mapping_logic;
         }
         return row;
       } catch (err) {
-        console.error('Error processing row:', err);
+        console.error("Error processing row:", err);
         return row;
       }
     });
@@ -85,27 +109,29 @@ export function MappingInterface() {
     return await Promise.all(promises);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsProcessing(true);
     setProgress(0);
-    setError('');
+    setError("");
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
-        const rows = text.split('\n').filter(row => row.trim());
-        const headers = rows[0].split(',');
-        
-        const parsedData: CsvRow[] = rows.slice(1).map(row => {
-          const values = row.split(',');
+        const rows = text.split("\n").filter((row) => row.trim());
+        const headers = rows[0].split(",");
+
+        const parsedData: CsvRow[] = rows.slice(1).map((row) => {
+          const values = row.split(",");
           return {
-            'Care Setting': values[0]?.trim() || '',
-            'Systems of Care': values[1]?.trim() || '',
-            'ICD Code': values[2]?.trim() || ''
+            "Care Setting": values[0]?.trim() || "",
+            "Systems of Care": values[1]?.trim() || "",
+            "ICD Code": values[2]?.trim() || "",
           };
         });
 
@@ -117,16 +143,20 @@ export function MappingInterface() {
 
         for (let i = 0; i < parsedData.length; i += BATCH_SIZE) {
           const batch = parsedData.slice(i, i + BATCH_SIZE);
-          const setting = careSettings.find(s => s.name === batch[0]['Care Setting']);
-          
+          const setting = careSettings.find(
+            (s) => s.name === batch[0]["Care Setting"]
+          );
+
           if (!setting) {
-            console.warn(`Invalid care setting for batch starting at index ${i}`);
+            console.warn(
+              `Invalid care setting for batch starting at index ${i}`
+            );
             continue;
           }
 
           const processedBatch = await processBatch(batch, setting);
-          
-          setCsvData(prevData => {
+
+          setCsvData((prevData) => {
             const newData = [...prevData];
             processedBatch.forEach((row, index) => {
               newData[i + index] = row;
@@ -139,8 +169,10 @@ export function MappingInterface() {
           setProgress((currentBatch / totalBatches) * 100);
         }
       } catch (err) {
-        console.error('Error processing CSV:', err);
-        setError('Error processing CSV file. Please check the format and try again.');
+        console.error("Error processing CSV:", err);
+        setError(
+          "Error processing CSV file. Please check the format and try again."
+        );
       } finally {
         setIsProcessing(false);
         setProgress(100);
@@ -152,28 +184,28 @@ export function MappingInterface() {
 
   const handleSearch = async () => {
     if (!selectedSetting || !icdCode.trim()) {
-      setError('Please select a care setting and enter an ICD code');
+      setError("Please select a care setting and enter an ICD code");
       return;
     }
 
     setIsSearching(true);
-    setError('');
+    setError("");
     setMappingResult(null);
 
     try {
-      const setting = careSettings.find(s => s.id === selectedSetting);
+      const setting = careSettings.find((s) => s.id === selectedSetting);
       if (!setting) {
-        throw new Error('Invalid care setting');
+        throw new Error("Invalid care setting");
       }
 
       const icdPrefix = getIcdPrefix(icdCode);
       let query = supabase
         .from(setting.table)
-        .select('service, confidence, mapping_logic')
-        .ilike('icd_code', `${icdPrefix}%`);
+        .select("service, confidence, mapping_logic")
+        .ilike("icd_code", `${icdPrefix}%`);
 
       if (selectedSystem) {
-        query = query.eq('systems_of_care', selectedSystem);
+        query = query.eq("systems_of_care", selectedSystem);
       }
 
       const { data, error: queryError } = await query.limit(1);
@@ -183,11 +215,11 @@ export function MappingInterface() {
       if (data && data.length > 0) {
         setMappingResult(data[0]);
       } else {
-        setError('No mapping found for the given ICD code and settings');
+        setError("No mapping found for the given ICD code and settings");
       }
     } catch (err) {
-      console.error('Error searching for mapping:', err);
-      setError('An error occurred while searching. Please try again.');
+      console.error("Error searching for mapping:", err);
+      setError("An error occurred while searching. Please try again.");
     } finally {
       setIsSearching(false);
     }
@@ -198,7 +230,10 @@ export function MappingInterface() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="care-setting" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="care-setting"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Care Setting
             </label>
             <select
@@ -217,7 +252,10 @@ export function MappingInterface() {
           </div>
 
           <div>
-            <label htmlFor="system-of-care" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="system-of-care"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               System of Care
             </label>
             <select
@@ -238,7 +276,10 @@ export function MappingInterface() {
 
         <div className="flex gap-4">
           <div className="flex-1">
-            <label htmlFor="icd-code" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="icd-code"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               ICD-10 Code
             </label>
             <div className="relative">
@@ -249,7 +290,7 @@ export function MappingInterface() {
                 placeholder="Enter ICD-10 code"
                 value={icdCode}
                 onChange={(e) => setIcdCode(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               />
               <button
                 onClick={handleSearch}
@@ -286,11 +327,13 @@ export function MappingInterface() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-emerald-600">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Processing CSV file... {Math.round(progress)}%</span>
+              <span className="text-sm">
+                Processing CSV file... {Math.round(progress)}%
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-emerald-600 h-2 rounded-full transition-all duration-300" 
+              <div
+                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -299,19 +342,31 @@ export function MappingInterface() {
 
         {mappingResult && (
           <div className="bg-emerald-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Mapping Result</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Mapping Result
+            </h3>
             <dl className="grid grid-cols-1 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Service</dt>
-                <dd className="mt-1 text-sm text-gray-900">{mappingResult.service}</dd>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {mappingResult.service}
+                </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Confidence</dt>
-                <dd className="mt-1 text-sm text-gray-900">{mappingResult.confidence}</dd>
+                <dt className="text-sm font-medium text-gray-500">
+                  Confidence
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {mappingResult.confidence}
+                </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Mapping Logic</dt>
-                <dd className="mt-1 text-sm text-gray-900">{mappingResult.mapping_logic}</dd>
+                <dt className="text-sm font-medium text-gray-500">
+                  Mapping Logic
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {mappingResult.mapping_logic}
+                </dd>
               </div>
             </dl>
           </div>
@@ -319,28 +374,54 @@ export function MappingInterface() {
 
         {csvData.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Bulk Results</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Bulk Results
+            </h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Care Setting</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Systems of Care</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ICD Code</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mapping Logic</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Care Setting
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Systems of Care
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ICD Code
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Service
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Confidence
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Mapping Logic
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {csvData.map((row, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row['Care Setting']}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row['Systems of Care']}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row['ICD Code']}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.Service || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.Confidence || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row['Mapping Logic'] || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row["Care Setting"]}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row["Systems of Care"]}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row["ICD Code"]}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row.Service || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row.Confidence || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row["Mapping Logic"] || "-"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

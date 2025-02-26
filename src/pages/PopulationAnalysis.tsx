@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Table } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { GlobalPopulationOverview } from '../components/population/GlobalPopulationOverview';
-import { PopulationDetails } from '../components/population/PopulationDetails';
-import { PopulationSummary } from '../components/population/PopulationSummary';
-import { PopulationGrowthChart } from '../components/population/PopulationGrowthChart';
-import { AgeDistributionChart } from '../components/population/AgeDistributionChart';
-import { PopulationPyramid } from '../components/population/PopulationPyramid';
-
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronRight, Table } from "lucide-react";
+import { GlobalPopulationOverview } from "../components/population/GlobalPopulationOverview";
+import { PopulationDetails } from "../components/population/PopulationDetails";
+import { PopulationSummary } from "../components/population/PopulationSummary";
+import { PopulationGrowthChart } from "../components/population/PopulationGrowthChart";
+import { AgeDistributionChart } from "../components/population/AgeDistributionChart";
+import { PopulationPyramid } from "../components/population/PopulationPyramid";
+import { api } from "../services/api";
 interface RegionInfo {
   id: string;
   name: string;
@@ -25,16 +24,27 @@ interface AgeDistributionData {
 }
 
 const YEARS = Array.from({ length: 16 }, (_, i) => 2025 + i);
-const AGE_GROUPS = ['0 to 4', '5 to 19', '20 to 29', '30 to 44', '45 to 64', '65 to 125'];
+const AGE_GROUPS = [
+  "0 to 4",
+  "5 to 19",
+  "20 to 29",
+  "30 to 44",
+  "45 to 64",
+  "65 to 125",
+];
 
 export function PopulationAnalysis() {
   const [regions, setRegions] = useState<RegionInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [showDetails, setShowDetails] = useState(false);
-  const [populationTrends, setPopulationTrends] = useState<PopulationTrend[]>([]);
-  const [ageDistribution, setAgeDistribution] = useState<AgeDistributionData[]>([]);
+  const [populationTrends, setPopulationTrends] = useState<PopulationTrend[]>(
+    []
+  );
+  const [ageDistribution, setAgeDistribution] = useState<AgeDistributionData[]>(
+    []
+  );
 
   useEffect(() => {
     fetchData();
@@ -49,18 +59,13 @@ export function PopulationAnalysis() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      const { data: popData } = await supabase
-        .from('population_data')
-        .select('*');
+
+      // Fetch population data
+      const popData = await api.get("/population/populationData");
 
       if (popData) {
-        const { data: regionsData } = await supabase
-          .from('regions')
-          .select('id, name')
-          .eq('is_neom', true)
-          .eq('status', 'active')
-          .in('id', [...new Set(popData.map(pd => pd.region_id))]);
+        // Fetch regions
+        const regionsData = await api.get("/population/populationRegions");
 
         if (regionsData) {
           setRegions(regionsData);
@@ -68,24 +73,28 @@ export function PopulationAnalysis() {
         }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const generatePopulationTrends = (regionsData: RegionInfo[], populationData: any[]) => {
+  const generatePopulationTrends = (
+    regionsData: RegionInfo[],
+    populationData: any[]
+  ) => {
     const trends: PopulationTrend[] = [];
 
-    YEARS.forEach(year => {
+    YEARS.forEach((year) => {
       const yearData: PopulationTrend = { year };
 
-      regionsData.forEach(region => {
+      regionsData.forEach((region) => {
         const totalPopulation = populationData
-          .filter(pd => pd.region_id === region.id)
+          .filter((pd) => pd.region_id === region.id)
           .reduce((sum, record) => {
             const value = record[`year_${year}`] || 0;
-            const calculatedValue = (value * record.default_factor) / record.divisor;
+            const calculatedValue =
+              (value * record.default_factor) / record.divisor;
             return sum + calculatedValue;
           }, 0);
 
@@ -99,28 +108,30 @@ export function PopulationAnalysis() {
   };
 
   const calculateAgeDistribution = () => {
-    const distribution: AgeDistributionData[] = AGE_GROUPS.map(ageGroup => {
+    const distribution: AgeDistributionData[] = AGE_GROUPS.map((ageGroup) => {
       let maleTotal = 0;
       let femaleTotal = 0;
 
-      regions.forEach(region => {
-        const yearData = populationTrends.find(pt => pt.year === selectedYear);
+      regions.forEach((region) => {
+        const yearData = populationTrends.find(
+          (pt) => pt.year === selectedYear
+        );
         if (yearData) {
           const totalPopulation = yearData[region.name] as number;
-          
+
           // Age group distribution
           let ageGroupPercentage;
-          if (ageGroup === '0 to 4') ageGroupPercentage = 0.08;
-          else if (ageGroup === '5 to 19') ageGroupPercentage = 0.20;
-          else if (ageGroup === '20 to 29') ageGroupPercentage = 0.18;
-          else if (ageGroup === '30 to 44') ageGroupPercentage = 0.30;
-          else if (ageGroup === '45 to 64') ageGroupPercentage = 0.19;
+          if (ageGroup === "0 to 4") ageGroupPercentage = 0.08;
+          else if (ageGroup === "5 to 19") ageGroupPercentage = 0.2;
+          else if (ageGroup === "20 to 29") ageGroupPercentage = 0.18;
+          else if (ageGroup === "30 to 44") ageGroupPercentage = 0.3;
+          else if (ageGroup === "45 to 64") ageGroupPercentage = 0.19;
           else ageGroupPercentage = 0.05; // 65 to 125
 
           // Gender distribution
-          const malePercentage = ageGroup === '65 to 125' ? 0.48 : 0.52;
+          const malePercentage = ageGroup === "65 to 125" ? 0.48 : 0.52;
           const ageGroupPopulation = totalPopulation * ageGroupPercentage;
-          
+
           maleTotal += ageGroupPopulation * malePercentage;
           femaleTotal += ageGroupPopulation * (1 - malePercentage);
         }
@@ -129,7 +140,7 @@ export function PopulationAnalysis() {
       return {
         ageGroup,
         male: Math.round(maleTotal),
-        female: Math.round(femaleTotal)
+        female: Math.round(femaleTotal),
       };
     });
 
@@ -159,7 +170,9 @@ export function PopulationAnalysis() {
         >
           <div className="flex items-center space-x-2">
             <Table className="h-6 w-6 text-emerald-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Population Details</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Population Details
+            </h2>
           </div>
           {showDetails ? (
             <ChevronDown className="h-5 w-5 text-gray-500" />
@@ -167,8 +180,12 @@ export function PopulationAnalysis() {
             <ChevronRight className="h-5 w-5 text-gray-500" />
           )}
         </button>
-        
-        <div className={`mt-4 transition-all duration-300 ${showDetails ? 'block' : 'hidden'}`}>
+
+        <div
+          className={`mt-4 transition-all duration-300 ${
+            showDetails ? "block" : "hidden"
+          }`}
+        >
           <PopulationDetails />
         </div>
       </div>
@@ -176,10 +193,7 @@ export function PopulationAnalysis() {
       {/* Charts Section */}
       <div className="space-y-8">
         {/* Population Growth Trend */}
-        <PopulationGrowthChart 
-          data={populationTrends}
-          regions={regions}
-        />
+        <PopulationGrowthChart data={populationTrends} regions={regions} />
 
         {/* Age Distribution and Population Pyramid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
