@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../services/api'; // Ensure you have the api service set up
 import { EncounterStats, SystemOfCareStats, OptimizationData } from '../types/encounters';
 
 export function useEncountersData() {
@@ -17,13 +17,10 @@ export function useEncountersData() {
 
       // Fetch all required data in parallel
       const [statsResult, systemResult, optimizationResult, topIcdResult] = await Promise.all([
-        supabase.from('encounters_statistics').select('*'),
-        supabase.from('system_of_care_analysis').select('*'),
-        supabase.from('care_setting_optimization_data').select('*'),
-        supabase.from('icd_code_analysis')
-          .select('*')
-          .order('total_encounters', { ascending: false })
-          .limit(5)
+        api.get('/useEncounter/encountersStatistics'),
+        api.get('/useEncounter/systemOfCareAnalysis'),
+        api.get('/useEncounter/careSettingOptimizationData'),
+        api.get('/useEncounter/icdCodeAnalysis')
       ]);
 
       if (statsResult.error) throw statsResult.error;
