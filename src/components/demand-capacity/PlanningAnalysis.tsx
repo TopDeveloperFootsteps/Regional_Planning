@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Table, Filter, ChevronUp, ChevronDown, Save } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { api } from "../../services/api"; // Import axios for HTTP requests
+import { Table, Filter, ChevronUp, ChevronDown, Save } from "lucide-react";
 
 interface PlanningAnalysisProps {
   selectedPlan: string;
@@ -29,12 +29,12 @@ interface ServiceAllocation {
 }
 
 const CARE_SETTINGS = [
-  'HOME',
-  'HEALTH STATION',
-  'AMBULATORY SERVICE CENTER',
-  'SPECIALTY CARE CENTER',
-  'EXTENDED CARE FACILITY',
-  'HOSPITAL'
+  "HOME",
+  "HEALTH STATION",
+  "AMBULATORY SERVICE CENTER",
+  "SPECIALTY CARE CENTER",
+  "EXTENDED CARE FACILITY",
+  "HOSPITAL",
 ];
 
 export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
@@ -42,10 +42,12 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
   const [activityDetails, setActivityDetails] = useState<ActivityDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCareType, setSelectedCareType] = useState<string>('all');
-  const [selectedService, setSelectedService] = useState<string>('all');
+  const [selectedCareType, setSelectedCareType] = useState<string>("all");
+  const [selectedService, setSelectedService] = useState<string>("all");
   const [uniqueServices, setUniqueServices] = useState<string[]>([]);
-  const [serviceAllocation, setServiceAllocation] = useState<ServiceAllocation[]>([]);
+  const [serviceAllocation, setServiceAllocation] = useState<
+    ServiceAllocation[]
+  >([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
   }, [selectedPlan]);
 
   useEffect(() => {
-    if (selectedService !== 'all') {
+    if (selectedService !== "all") {
       initializeServiceAllocation();
     }
   }, [selectedService, activityDetails]);
@@ -65,91 +67,99 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
       setLoading(true);
       setError(null);
 
-      const [summaryResult, detailsResult] = await Promise.all([
-        supabase.from('care_setting_activity_summary').select('*'),
-        supabase.from('care_setting_activity_details').select('*')
+      const [summary, details] = await Promise.all([
+        api.get("/planning/activity_data"),
+        api.get("/planning/activity_data"),
       ]);
 
-      if (summaryResult.error) throw summaryResult.error;
-      if (detailsResult.error) throw detailsResult.error;
-
-      setActivitySummary(summaryResult.data || []);
-      setActivityDetails(detailsResult.data || []);
-
-      const services = [...new Set(detailsResult.data?.map(d => d.service) || [])];
+      const services = [...new Set(details.details.map((d) => d.service))];
       setUniqueServices(services.sort());
 
+      setActivitySummary(summary.summary || []);
+      setActivityDetails(details.details || []);
     } catch (err) {
-      console.error('Error fetching activity data:', err);
-      setError('Failed to load activity data');
+      console.error("Error fetching activity data:", err);
+      setError("Failed to load activity data");
     } finally {
       setLoading(false);
     }
   };
 
   const initializeServiceAllocation = () => {
-    const serviceData = activityDetails.filter(d => d.service === selectedService);
-    const totalServiceActivity = serviceData.reduce((sum, d) => sum + d.total_activity, 0);
-    
-    const allocation: ServiceAllocation[] = CARE_SETTINGS.map(setting => {
-      const settingData = serviceData.find(d => d.care_setting === setting);
-      const currentDistribution = settingData 
-        ? (settingData.total_activity / totalServiceActivity) * 100 
+    const serviceData = activityDetails.filter(
+      (d) => d.service === selectedService
+    );
+    const totalServiceActivity = serviceData.reduce(
+      (sum, d) => sum + Number(d.total_activity),
+      0
+    );
+
+    const allocation: ServiceAllocation[] = CARE_SETTINGS.map((setting) => {
+      const settingData = serviceData.find((d) => d.care_setting === setting);
+      const currentDistribution = settingData
+        ? (Number(settingData.total_activity) / Number(totalServiceActivity)) *
+          100
         : 0;
 
       return {
         care_setting: setting,
         current_distribution: currentDistribution,
         proposed_distribution: currentDistribution,
-        total_activity: settingData?.total_activity || 0
+        total_activity: Number(settingData?.total_activity) || 0,
       };
     });
 
     setServiceAllocation(allocation);
   };
 
-  const handleServiceAllocationChange = (careSetting: string, change: number) => {
-    const currentValue = serviceAllocation.find(s => s.care_setting === careSetting)?.proposed_distribution || 0;
+  const handleServiceAllocationChange = (
+    careSetting: string,
+    change: number
+  ) => {
+    const currentValue =
+      serviceAllocation.find((s) => s.care_setting === careSetting)
+        ?.proposed_distribution || 0;
     const newValue = Math.round((currentValue + change) / 5) * 5; // Round to nearest 5%
-    
+
     if (newValue >= 0 && newValue <= 100) {
-      setServiceAllocation(prev => prev.map(item => 
-        item.care_setting === careSetting 
-          ? { ...item, proposed_distribution: newValue }
-          : item
-      ));
+      setServiceAllocation((prev) =>
+        prev.map((item) =>
+          item.care_setting === careSetting
+            ? { ...item, proposed_distribution: newValue }
+            : item
+        )
+      );
     }
   };
 
   const handleSaveAllocation = async () => {
     try {
       setIsSaving(true);
-      
+
       // Validate total equals 100%
-      const total = serviceAllocation.reduce((sum, item) => sum + item.proposed_distribution, 0);
+      const total = serviceAllocation.reduce(
+        (sum, item) => sum + item.proposed_distribution,
+        0
+      );
       if (Math.round(total) !== 100) {
-        throw new Error('Total proposed distribution must equal 100%');
+        throw new Error("Total proposed distribution must equal 100%");
       }
 
       // Save to database
-      const { error } = await supabase
-        .from('service_allocations')
-        .upsert(
-          serviceAllocation.map(item => ({
-            plan_id: selectedPlan,
-            service: selectedService,
-            care_setting: item.care_setting,
-            proposed_distribution: item.proposed_distribution
-          }))
-        );
-
-      if (error) throw error;
+      await api.post("/planning/service_allocations", {
+        allocations: serviceAllocation.map((item) => ({
+          plan_id: selectedPlan,
+          service: selectedService,
+          care_setting: item.care_setting,
+          proposed_distribution: item.proposed_distribution,
+        })),
+      });
 
       // Show success message
-      alert('Service allocation saved successfully');
+      alert("Service allocation saved successfully");
     } catch (err) {
-      console.error('Error saving service allocation:', err);
-      alert('Failed to save service allocation');
+      console.error("Error saving service allocation:", err);
+      alert("Failed to save service allocation");
     } finally {
       setIsSaving(false);
     }
@@ -164,11 +174,7 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
   }
 
   if (error) {
-    return (
-      <div className="text-red-600 p-4 text-center">
-        {error}
-      </div>
-    );
+    return <div className="text-red-600 p-4 text-center">{error}</div>;
   }
 
   return (
@@ -190,9 +196,9 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
             >
               <option value="all">All Care Settings</option>
-              {CARE_SETTINGS.map(setting => (
+              {CARE_SETTINGS.map((setting) => (
                 <option key={setting} value={setting}>
-                  {setting.replace(/_/g, ' ')}
+                  {setting.replace(/_/g, " ")}
                 </option>
               ))}
             </select>
@@ -207,8 +213,10 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
             >
               <option value="all">All Services</option>
-              {uniqueServices.map(service => (
-                <option key={service} value={service}>{service}</option>
+              {uniqueServices.map((service) => (
+                <option key={service} value={service}>
+                  {service}
+                </option>
               ))}
             </select>
           </div>
@@ -216,7 +224,7 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
       </div>
 
       {/* Service Allocation Table */}
-      {selectedService !== 'all' && (
+      {selectedService !== "all" && (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
@@ -231,7 +239,7 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Allocation'}
+              {isSaving ? "Saving..." : "Save Allocation"}
             </button>
           </div>
 
@@ -257,7 +265,7 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
                 {serviceAllocation.map((item) => (
                   <tr key={item.care_setting}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.care_setting.replace(/_/g, ' ')}
+                      {item.care_setting.replace(/_/g, " ")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
@@ -285,26 +293,39 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
                             type="number"
                             value={item.proposed_distribution}
                             onChange={(e) => {
-                              const value = Math.round(parseFloat(e.target.value) / 5) * 5;
+                              const value =
+                                Math.round(parseFloat(e.target.value) / 5) * 5;
                               if (!isNaN(value) && value >= 0 && value <= 100) {
-                                setServiceAllocation(prev => prev.map(s => 
-                                  s.care_setting === item.care_setting 
-                                    ? { ...s, proposed_distribution: value }
-                                    : s
-                                ));
+                                setServiceAllocation((prev) =>
+                                  prev.map((s) =>
+                                    s.care_setting === item.care_setting
+                                      ? { ...s, proposed_distribution: value }
+                                      : s
+                                  )
+                                );
                               }
                             }}
                             className="w-20 text-right rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm"
                           />
                           <div className="flex flex-col">
                             <button
-                              onClick={() => handleServiceAllocationChange(item.care_setting, 5)}
+                              onClick={() =>
+                                handleServiceAllocationChange(
+                                  item.care_setting,
+                                  5
+                                )
+                              }
                               className="text-gray-500 hover:text-emerald-600"
                             >
                               <ChevronUp className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => handleServiceAllocationChange(item.care_setting, -5)}
+                              onClick={() =>
+                                handleServiceAllocationChange(
+                                  item.care_setting,
+                                  -5
+                                )
+                              }
                               className="text-gray-500 hover:text-emerald-600"
                             >
                               <ChevronDown className="h-4 w-4" />
@@ -325,11 +346,19 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
 
           {/* Total Proposed Percentage */}
           <div className="mt-4 text-right text-sm text-gray-500">
-            Total Proposed: {serviceAllocation.reduce((sum, item) => sum + item.proposed_distribution, 0)}%
-            {Math.round(serviceAllocation.reduce((sum, item) => sum + item.proposed_distribution, 0)) !== 100 && (
-              <span className="ml-2 text-red-500">
-                (Must equal 100%)
-              </span>
+            Total Proposed:{" "}
+            {serviceAllocation.reduce(
+              (sum, item) => sum + item.proposed_distribution,
+              0
+            )}
+            %
+            {Math.round(
+              serviceAllocation.reduce(
+                (sum, item) => sum + item.proposed_distribution,
+                0
+              )
+            ) !== 100 && (
+              <span className="ml-2 text-red-500">(Must equal 100%)</span>
             )}
           </div>
         </div>
@@ -339,7 +368,9 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center space-x-2 mb-6">
           <Table className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Care Setting Activity Distribution</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Care Setting Activity Distribution
+          </h2>
         </div>
 
         <div className="overflow-x-auto">
@@ -359,13 +390,15 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {CARE_SETTINGS.map((setting) => {
-                const summary = activitySummary.find(s => s.care_setting === setting);
-                const currentPercentage = summary?.percentage || 0;
+                const summary = activitySummary.find(
+                  (s) => s.care_setting === setting
+                );
+                const currentPercentage = Number(summary?.percentage) || 0;
 
                 return (
                   <tr key={setting}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {setting.replace(/_/g, ' ')}
+                      {setting.replace(/_/g, " ")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
@@ -381,7 +414,11 @@ export function PlanningAnalysis({ selectedPlan }: PlanningAnalysisProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {summary ? Math.round(summary.total_activity).toLocaleString() : 0}
+                      {summary
+                        ? Math.round(
+                            Number(summary.total_activity)
+                          ).toLocaleString()
+                        : 0}
                     </td>
                   </tr>
                 );

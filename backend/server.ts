@@ -16,6 +16,7 @@ import output from './api/output'
 import assumtions from './api/assumptions'
 import opdRoom from './api/opdRoom'
 import opdCapacity from './api/opdCapacity'
+import planning from './api/planning'
 
 const app = express();
 app.use(cors());
@@ -36,6 +37,7 @@ app.use('/api/output', output);
 app.use('/api/assumptions', assumtions);
 app.use('/api/opdRoom', opdRoom);
 app.use('/api/opdCapacity', opdCapacity);
+app.use('/api/planning', planning);
 // Test database connection
 pool.connect()
   .then(() => {

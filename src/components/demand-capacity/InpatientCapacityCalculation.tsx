@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Calculator, Clock, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Calculator, Clock, Calendar } from "lucide-react";
 
 interface InpatientCapacity {
   specialty: string;
@@ -32,13 +31,13 @@ export function InpatientCapacityCalculation() {
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Inpatient Capacity Calculation</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          Inpatient Capacity Calculation
+        </h2>
         <p className="text-gray-600">
           This section will calculate inpatient capacity requirements based on:
-          - Annual admissions by specialty
-          - Average length of stay
-          - Occupancy rates
-          - Bed turnover intervals
+          - Annual admissions by specialty - Average length of stay - Occupancy
+          rates - Bed turnover intervals
         </p>
       </div>
     </div>
