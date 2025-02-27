@@ -11,6 +11,7 @@ import assets from './api/assets'; // Removed the '.ts' extension
 import population from './api/population';
 import mapping from './api/Mapping';
 import tablelist from './api/tablelist';
+import dcPlans from './api/dcPlan';
 
 
 const app = express();
@@ -27,7 +28,7 @@ app.use('/api/assets', assets );
 app.use('/api/population', population);
 app.use('/api/mapping', mapping);
 app.use('/api/tablelist', tablelist);
-
+app.use('/api/dc_plan', dcPlans);
 
 // Test database connection
 pool.connect()

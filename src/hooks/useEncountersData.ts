@@ -22,6 +22,7 @@ export function useEncountersData() {
         api.get('/useEncounter/careSettingOptimizationData'),
         api.get('/useEncounter/icdCodeAnalysis')
       ]);
+      
 
       if (statsResult.error) throw statsResult.error;
       if (systemResult.error) throw systemResult.error;
@@ -37,7 +38,6 @@ export function useEncountersData() {
           }
           return acc;
         }, {} as Record<string, number>);
-
 
         return {
           ...stat,
