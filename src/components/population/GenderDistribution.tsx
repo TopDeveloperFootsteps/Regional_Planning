@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Users, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { api } from "../../services/api";
 
 interface GenderData {
   ageGroup: string;
@@ -113,11 +113,10 @@ export function GenderDistribution() {
 
   const fetchBaseline = async () => {
     try {
-      const { data, error } = await supabase
-        .from("gender_distribution_baseline")
-        .select("*");
-
-      if (error) throw error;
+      const response = await api.get(
+        "/population/gender_distribution_baseline"
+      );
+      const data = response;
 
       if (data && data.length > 0) {
         setBaselineData(data[0].male_data);
@@ -135,12 +134,9 @@ export function GenderDistribution() {
 
   const saveBaseline = async (data: GenderData[]) => {
     try {
-      const { error } = await supabase
-        .from("gender_distribution_baseline")
-        .upsert({ id: 1, male_data: data });
-
-      if (error) throw error;
-
+      await api.post("/population/gender_distribution_baseline", {
+        male_data: data,
+      });
       setBaselineData(data);
     } catch (err) {
       console.error("Error saving baseline:", err);

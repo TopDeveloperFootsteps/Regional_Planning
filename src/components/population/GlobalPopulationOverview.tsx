@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Users, Calculator, Activity, TrendingUp } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { api } from "../../services/api";
 
 interface PopulationData {
   region_id: string;
@@ -28,18 +28,15 @@ export function GlobalPopulationOverview({
   const fetchPopulationData = async () => {
     try {
       setLoading(true);
-      const { data: regions } = await supabase
-        .from("regions")
-        .select("*")
-        .eq("is_neom", true)
-        .eq("status", "active");
+      const [regionsResponse, popDataResponse] = await Promise.all([
+        api.get("/population/regions_g"),
+        api.get("/population/population_data"),
+      ]);
 
+      const regions = regionsResponse;
       if (!regions) return;
 
-      const { data: popData } = await supabase
-        .from("population_data")
-        .select("*");
-
+      const popData = popDataResponse;
       if (popData) {
         setPopulationData(popData);
       }

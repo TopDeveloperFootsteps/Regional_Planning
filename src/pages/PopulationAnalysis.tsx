@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Table } from "lucide-react";
+import { api } from "../services/api";
 import { GlobalPopulationOverview } from "../components/population/GlobalPopulationOverview";
 import { PopulationDetails } from "../components/population/PopulationDetails";
 import { PopulationSummary } from "../components/population/PopulationSummary";
 import { PopulationGrowthChart } from "../components/population/PopulationGrowthChart";
 import { AgeDistributionChart } from "../components/population/AgeDistributionChart";
 import { PopulationPyramid } from "../components/population/PopulationPyramid";
-import { api } from "../services/api";
+
 interface RegionInfo {
   id: string;
   name: string;
@@ -60,17 +61,51 @@ export function PopulationAnalysis() {
     try {
       setLoading(true);
 
-      // Fetch population data
-      const popData = await api.get("/population/populationData");
+      const [popDataResponse, regionsResponse] = await Promise.all([
+        api.get("/population/population_data"),
+        api.get("/population/regions"),
+      ]);
 
-      if (popData) {
-        // Fetch regions
-        const regionsData = await api.get("/population/populationRegions");
+      type FirstData = {
+        region_id: string;
+      };
 
-        if (regionsData) {
-          setRegions(regionsData);
-          generatePopulationTrends(regionsData, popData);
-        }
+      type SecondData = {
+        id: string;
+        name: string;
+      };
+
+      const firstData: FirstData[] = popDataResponse;
+
+      const secondData: SecondData[] = regionsResponse;
+
+      const getUniqueRegions = (
+        firstData: FirstData[],
+        secondData: SecondData[]
+      ) => {
+        // Extract unique region_ids from firstData
+        const uniqueRegions = Array.from(
+          new Set(firstData.map((item) => item.region_id))
+        );
+
+        // Map to new objects with id and name from secondData
+        return uniqueRegions.map((regionId) => {
+          const regionName =
+            secondData.find((region) => region.id === regionId)?.name ||
+            "Unknown";
+          return { id: regionId, name: regionName };
+        });
+      };
+
+      const result = getUniqueRegions(firstData, secondData);
+
+      const popData = popDataResponse;
+
+      const regionsData = result;
+
+      if (regionsData) {
+        setRegions(regionsData);
+        generatePopulationTrends(regionsData, popData);
       }
     } catch (error) {
       console.error("Error fetching data:", error);

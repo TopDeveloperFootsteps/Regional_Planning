@@ -186,7 +186,11 @@ export function MappingInterface() {
         careSettingTable: setting.table,
       });
 
-      setMappingResult(response);
+      if (response.error)
+        setError("No mapping found for the given ICD code and settings");
+      else {
+        setMappingResult(response);
+      }
     } catch (err) {
       console.error("Error searching for mapping:", err);
       setError("An error occurred while searching. Please try again.");
