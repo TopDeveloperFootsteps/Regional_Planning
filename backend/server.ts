@@ -12,6 +12,8 @@ import population from './api/population';
 import mapping from './api/Mapping';
 import tablelist from './api/tablelist';
 import dcPlans from './api/dcPlan';
+// import output from './api/output'
+import assumtions from './api/assumptions'
 
 
 const app = express();
@@ -29,7 +31,8 @@ app.use('/api/population', population);
 app.use('/api/mapping', mapping);
 app.use('/api/tablelist', tablelist);
 app.use('/api/dc_plan', dcPlans);
-
+// app.use('/api/output', output);
+app.use('/api/assumptions', assumtions);
 // Test database connection
 pool.connect()
   .then(() => {

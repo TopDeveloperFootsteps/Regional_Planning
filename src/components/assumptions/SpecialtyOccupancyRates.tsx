@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Table } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { api } from "../../services/api";
+import { Table } from "lucide-react";
 
 interface SpecialtyOccupancyRate {
   id: string;
@@ -15,7 +15,10 @@ interface EditableNumberCellProps {
   onChange: (value: number) => void;
 }
 
-const EditableNumberCell: React.FC<EditableNumberCellProps> = ({ value, onChange }) => (
+const EditableNumberCell: React.FC<EditableNumberCellProps> = ({
+  value,
+  onChange,
+}) => (
   <input
     type="number"
     min="0"
@@ -30,7 +33,8 @@ export function SpecialtyOccupancyRates() {
   const [rates, setRates] = useState<SpecialtyOccupancyRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSetting, setSelectedSetting] = useState<string>('Primary Care');
+  const [selectedSetting, setSelectedSetting] =
+    useState<string>("Primary Care");
 
   useEffect(() => {
     fetchRates();
@@ -39,36 +43,39 @@ export function SpecialtyOccupancyRates() {
   const fetchRates = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('specialty_occupancy_rates')
-        .select('*')
-        .eq('care_setting', selectedSetting)
-        .order('specialty');
-
-      if (error) throw error;
-      setRates(data || []);
+      const response = await api.get(
+        `/assumptions/specialty_occupancy_rates?care_setting=${selectedSetting}`
+      );
+      setRates(response || []);
     } catch (err) {
-      console.error('Error fetching specialty occupancy rates:', err);
-      setError('Failed to load visit percentages');
+      console.error("Error fetching specialty occupancy rates:", err);
+      setError("Failed to load visit percentages");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRateChange = async (id: string, field: 'virtual_rate' | 'inperson_rate', value: number) => {
+  const handleRateChange = async (
+    id: string,
+    field: "virtual_rate" | "inperson_rate",
+    value: number
+  ) => {
     try {
-      const { error } = await supabase
-        .from('specialty_occupancy_rates')
-        .update({ [field]: value })
-        .eq('id', id);
+      const response = await api.put(
+        `/assumptions/specialty_occupancy_rates/${id}`,
+        {
+          field,
+          value,
+        }
+      );
 
-      if (error) throw error;
-
-      setRates(prev => prev.map(rate => 
-        rate.id === id ? { ...rate, [field]: value } : rate
-      ));
+      setRates((prev) =>
+        prev.map((rate) =>
+          rate.id === id ? { ...rate, [field]: value } : rate
+        )
+      );
     } catch (err) {
-      console.error('Error updating rate:', err);
+      console.error("Error updating rate:", err);
     }
   };
 
@@ -81,11 +88,7 @@ export function SpecialtyOccupancyRates() {
   }
 
   if (error) {
-    return (
-      <div className="text-red-600 p-4">
-        {error}
-      </div>
-    );
+    return <div className="text-red-600 p-4">{error}</div>;
   }
 
   return (
@@ -93,7 +96,9 @@ export function SpecialtyOccupancyRates() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           <Table className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Inperson to Virtual Visit Percentages</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Inperson to Virtual Visit Percentages
+          </h2>
         </div>
         <select
           value={selectedSetting}
@@ -101,7 +106,9 @@ export function SpecialtyOccupancyRates() {
           className="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
         >
           <option value="Primary Care">Primary Care</option>
-          <option value="Specialist Outpatient Care">Specialist Outpatient Care</option>
+          <option value="Specialist Outpatient Care">
+            Specialist Outpatient Care
+          </option>
           <option value="Emergency Care">Emergency Care</option>
         </select>
       </div>
@@ -110,9 +117,15 @@ export function SpecialtyOccupancyRates() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialty</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Virtual Visit %</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inperson Visit %</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Specialty
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Virtual Visit %
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Inperson Visit %
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -126,7 +139,9 @@ export function SpecialtyOccupancyRates() {
                     <div className="flex items-center space-x-2">
                       <EditableNumberCell
                         value={rate.virtual_rate}
-                        onChange={(value) => handleRateChange(rate.id, 'virtual_rate', value)}
+                        onChange={(value) =>
+                          handleRateChange(rate.id, "virtual_rate", value)
+                        }
                       />
                       <span className="text-sm text-gray-500">%</span>
                     </div>
@@ -143,7 +158,9 @@ export function SpecialtyOccupancyRates() {
                     <div className="flex items-center space-x-2">
                       <EditableNumberCell
                         value={rate.inperson_rate}
-                        onChange={(value) => handleRateChange(rate.id, 'inperson_rate', value)}
+                        onChange={(value) =>
+                          handleRateChange(rate.id, "inperson_rate", value)
+                        }
                       />
                       <span className="text-sm text-gray-500">%</span>
                     </div>
