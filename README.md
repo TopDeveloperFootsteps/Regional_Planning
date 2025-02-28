@@ -61,10 +61,6 @@ Your database is now fully set up!
 
 Navigate to the `backend` folder:
 
-```sh
- cd backend
-```
-
 Create a new **.env** file in the `backend` directory and configure it as follows:
 
 ```sh
@@ -98,7 +94,6 @@ Navigate to the `backend` directory and install dependencies:
 Navigate to the `frontend` directory and install dependencies:
 
 ```sh
- cd frontend
  npm install
 ```
 
