@@ -1,9 +1,0 @@
-{
-  "exclude": [
-    "supabase/migrations/**/*",
-    "node_modules/**/*",
-    ".git/**/*",
-    "dist/**/*",
-    "package-lock.json"
-  ]
-}

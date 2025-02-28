@@ -1,39 +1,10 @@
 // import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-// import { supabase } from "../lib/supabase";
-// import { Loader2, Map } from "lucide-react";
+
 import logoUrl from "../icons/NEOM_logo.svg";
 
 export function Header() {
-  // const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  // const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState<string | null>(null);
   const location = useLocation();
-
-  // useEffect(() => {
-  //   async function getLogoUrl() {
-  //     try {
-  //       setIsLoading(true);
-  //       setError(null);
-  //       const {
-  //         data: { publicUrl },
-  //       } = supabase.storage.from("image").getPublicUrl("NEOM_logo.svg");
-
-  //       if (publicUrl) {
-  //         setLogoUrl(publicUrl);
-  //       } else {
-  //         setError("Failed to load logo");
-  //       }
-  //     } catch (err) {
-  //       setError("Failed to load logo");
-  //       console.error("Error loading logo:", err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-
-  //   getLogoUrl();
-  // }, []);
 
   return (
     <header className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
