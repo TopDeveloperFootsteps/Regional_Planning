@@ -126,7 +126,4 @@ If you encounter any issues:
 For further assistance, check the project documentation or contact the repository maintainers.
 
 ---
-## License
-This project is licensed under the MIT License.
 
-Happy Coding! 🚀
